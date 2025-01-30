@@ -7,7 +7,8 @@ WORKDIR /app
 # Install OpenSSL - required for Prisma and install PM2 globally
 RUN apt-get update -y && \
     apt-get install -y openssl && \
-    npm install -g pm2
+    npm install -g pm2 && \
+    npm install -g typescript
 
 # Copy package files
 COPY package*.json ./
