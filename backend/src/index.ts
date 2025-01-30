@@ -73,16 +73,15 @@ expressApp.get('/api/tip/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await getUserInfo(userId);
-        console.log('userid', userId, user)
         const tipUrl = user?.url;
         if (!tipUrl) throw new BaseError('Payment URL not configured', userId);
         const qrPath = await buildTipQr(tipUrl, userId);
-        
+
         // Set appropriate headers for image serving
         res.setHeader('Content-Type', 'image/png');
         res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
         res.setHeader('Content-Disposition', 'inline');
-        
+
         res.sendFile(qrPath);
     } catch (error) {
         logger.error('Error handling /tip/:userId route:', error);
@@ -92,6 +91,38 @@ expressApp.get('/api/tip/:userId', async (req, res) => {
 
 expressApp.get('/api/status', async (req, res) => {
     res.send('ok');
+});
+
+expressApp.get('/api/help', async (req, res) => {
+    res.send('email braden@bradenbagby.com for help');
+});
+
+expressApp.get('/api/privacy', async (req, res) => {
+    const privacyPolicy = `
+Privacy Policy for Slack Tip Bot
+
+Last Updated: ${new Date().toISOString().split('T')[0]}
+
+1. Information We Collect
+We collect and store only the following user information:
+- Slack username/display name
+
+2. How We Use Information
+The collected information is used solely for the purpose of facilitating tipping functionality within Slack workspaces.
+
+3. Data Storage and Security
+We take reasonable measures to protect the limited user information we collect.
+
+4. Data Sharing
+We do not sell, trade, or otherwise transfer your information to third parties.
+
+5. Contact
+For any privacy-related questions, please contact braden@bradenbagby.com
+
+6. Changes to Privacy Policy
+We may update this privacy policy from time to time. Any changes will be reflected on this page.`;
+
+    res.type('text').send(privacyPolicy);
 });
 
 // Start the Express server

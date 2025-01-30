@@ -150,7 +150,6 @@ export const tipAction = async ({ client, body, action, ack }: {
             ]
         });
 
-        console.log('image url', `${HOST}/api/tip/${body.user.id}`)
 
     } catch (error) {
         logger.error('Error handling QR code generation:', error);
