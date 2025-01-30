@@ -46,7 +46,14 @@ export const configureModal = async ({ ack, view, body, client }: SlackViewMiddl
         const url = view.state.values.url_input.url.value;
         const teamId = body.team?.id;
         const userId = body.user.id;
-        const userName = body.user.name;
+
+        // Get user info from Slack API for full name
+        const userInfo = await client.users.info({
+            user: body.user.id
+        });
+        const userName = userInfo.user?.real_name || body.user?.name;
+
+
 
         if (!teamId) {
             throw new Error('Team ID not found');
