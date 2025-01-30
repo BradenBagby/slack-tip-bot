@@ -122,7 +122,7 @@ export const buildTipQr = async (url: string, userId: string): Promise<string> =
     return filePath;
 }
 
-export const tipAction = async ({ client, body, action, ack }: {
+export const tipAction = async ({ client, body, action, ack, respond }: {
     payload: BlockElementAction | DialogSubmitAction | WorkflowStepEdit | InteractiveAction;
     action: BlockElementAction | DialogSubmitAction | WorkflowStepEdit | InteractiveAction;
     body: SlackAction;
@@ -163,12 +163,21 @@ export const tipAction = async ({ client, body, action, ack }: {
         });
         const userName = userInfo.user?.real_name || 'Someone';
 
+        const isDm = body.channel.name === 'directmessage';
 
         // send message to channel saying 'this user tipped $amount'
-        await client.chat.postMessage({
-            channel: body.channel.id,
-            text: `${userName} tipped ${recipient?.userName || ''} $${amount}!`
-        });
+        const text = `${userName} tipped ${recipient?.userName || ''} $${amount}!`;
+        if (isDm) {
+            respond({
+                text,
+            })
+        }
+        else {
+            await client.chat.postMessage({
+                channel: body.channel.id,
+                text,
+            });
+        }
 
         // Post ephemeral message with QR code as attachment
         await client.chat.postEphemeral({
