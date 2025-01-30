@@ -142,7 +142,9 @@ export const tipAction = async ({ client, body, action, ack }: {
                     text: tipUrl,
                 },
                 {
+                    fallback: "QR Code for payment",
                     image_url: `${HOST}/api/tip/${body.user.id}`,
+                    title: "Scan to pay",
                 },
 
             ]

@@ -76,8 +76,14 @@ expressApp.get('/api/tip/:userId', async (req, res) => {
         console.log('userid', userId, user)
         const tipUrl = user?.url;
         if (!tipUrl) throw new BaseError('Payment URL not configured', userId);
-        const qrFilename = await buildTipQr(tipUrl, userId);
-        res.sendFile(qrFilename);
+        const qrPath = await buildTipQr(tipUrl, userId);
+        
+        // Set appropriate headers for image serving
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+        res.setHeader('Content-Disposition', 'inline');
+        
+        res.sendFile(qrPath);
     } catch (error) {
         logger.error('Error handling /tip/:userId route:', error);
         res.status(500).send('Internal server error');
