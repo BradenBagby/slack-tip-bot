@@ -199,7 +199,6 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
             await client.chat.postMessage({
                 channel: body.channel.id,
                 text,
-                attachments,
             });
         }
 
