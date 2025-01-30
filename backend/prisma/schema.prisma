@@ -28,6 +28,7 @@ model UserConfiguration {
     userId    String
     teamId    String
     url       String?
+    userName  String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 

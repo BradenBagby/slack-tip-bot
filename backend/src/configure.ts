@@ -46,6 +46,7 @@ export const configureModal = async ({ ack, view, body, client }: SlackViewMiddl
         const url = view.state.values.url_input.url.value;
         const teamId = body.team?.id;
         const userId = body.user.id;
+        const userName = body.user.name;
 
         if (!teamId) {
             throw new Error('Team ID not found');
@@ -61,11 +62,13 @@ export const configureModal = async ({ ack, view, body, client }: SlackViewMiddl
             },
             update: {
                 url: url,
+                userName: userName,
             },
             create: {
                 userId: userId,
                 teamId: teamId,
                 url: url,
+                userName: userName,
             },
         });
 

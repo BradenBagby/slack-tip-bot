@@ -6,13 +6,15 @@ import logger from "./utils/logger";
 import QRCode from 'qrcode';
 import { tmpdir } from 'os';
 import path from 'path';
+import { HOST } from "./utils/env";
 
 
 export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewareArgs & AllMiddlewareArgs<StringIndexed>) => {
     const userId = command.user_id;
     if (!userId) throw new BaseError('User ID not found', command);
 
-    const tipUrl = await getTipUrl(userId);
+    const user = await getUserInfo(userId);
+    const tipUrl = user?.url;
     if (!tipUrl) {
         await client.chat.postMessage({
             channel: command.channel_id,
@@ -72,11 +74,11 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
     });
 }
 
-export const getTipUrl = async (userId: string) => {
+export const getUserInfo = async (userId: string) => {
     const userConfig = await prisma.userConfiguration.findFirst({
         where: { userId: userId }
     });
-    return userConfig?.url;
+    return userConfig;
 }
 
 export const buildTipQr = async (url: string, userId: string): Promise<string> => {
@@ -104,7 +106,8 @@ export const tipAction = async ({ client, body, action, ack }: {
     await ack();
     try {
         const amount = buttonAction.action_id.split('_')[2];
-        const tipUrl = await getTipUrl(body.user.id);
+        const tippingUser = await getUserInfo(body.user.id);
+        const tipUrl = tippingUser?.url;
         if (!body.channel?.id) throw new BaseError('Channel ID not found', body);
 
         if (!tipUrl) {
@@ -116,21 +119,33 @@ export const tipAction = async ({ client, body, action, ack }: {
             return;
         }
 
-        // Generate payment URL with amount
-        const paymentUrl = tipUrl;
+        // Get user info from Slack API for full name
+        const userInfo = await client.users.info({
+            user: body.user.id
+        });
+        const userName = userInfo.user?.real_name || 'Someone';
 
-        // Generate QR code as base64
-        const qrBase64 = await QRCode.toDataURL(paymentUrl);
+
+        // send message to channel saying 'this user tipped $amount'
+        await client.chat.postMessage({
+            channel: body.channel.id,
+            text: `${userName} tipped ${tippingUser?.userName || ''} $${amount}!`
+        });
 
         // Post ephemeral message with QR code as attachment
         await client.chat.postEphemeral({
             channel: body.channel.id,
             user: body.user.id,
-            text: `QR Code for $${amount} payment`,
-            attachments: [{
-                image_url: 'https://picsum.photos/200/300',
-                fallback: `QR Code for $${amount} payment`
-            }]
+            text: `Thanks for the tip!`,
+            attachments: [
+                {
+                    text: tipUrl,
+                },
+                {
+                    image_url: `${HOST}/api/tip/${body.user.id}`,
+                },
+
+            ]
         });
 
     } catch (error) {

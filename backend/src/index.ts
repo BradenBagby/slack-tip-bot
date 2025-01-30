@@ -1,7 +1,7 @@
 import { App, LogLevel } from '@slack/bolt';
 import { configureCommand, configureModal } from './configure';
 import { fetchInstallation, storeInstallation } from './installation';
-import { buildTipQr, getTipUrl, tipAction, tipCommand } from './tip';
+import { buildTipQr, getUserInfo, tipAction, tipCommand } from './tip';
 import { SLACK_PORT, IS_PRODUCTION, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET, SLACK_STATE_SECRET } from "./utils/env";
 import { BaseError, uncaughtExceptionHandler } from "./utils/errors";
 import logger from "./utils/logger";
@@ -72,7 +72,8 @@ const expressApp = express();
 expressApp.get('/api/tip/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
-        const tipUrl = await getTipUrl(userId);
+        const user = await getUserInfo(userId);
+        const tipUrl = user?.url;
         if (!tipUrl) throw new BaseError('Payment URL not configured', userId);
         const qrFilename = await buildTipQr(tipUrl, userId);
         res.sendFile(qrFilename);
