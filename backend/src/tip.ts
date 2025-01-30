@@ -82,7 +82,6 @@ export const tipCommand = async ({ client, body, command, respond }: SlackComman
             // Send message with amount buttons
             await client.chat.postMessage({
                 channel: command.channel_id,
-                as_user: false,
                 blocks,
             });
         }

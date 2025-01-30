@@ -49,7 +49,7 @@ app.command('/tip', async (allArgs) => {
     try {
         const [subcommand, ...args] = command.text.split(' ');
 
-        const user = await getUserInfo(body.user.id);
+        const user = await getUserInfo(body.user_id);
         if (!user?.url) {
             await configureCommand(allArgs);
         } else if (subcommand === 'configure') {
