@@ -79,11 +79,6 @@ export const configureModal = async ({ ack, view, body, client }: SlackViewMiddl
             },
         });
 
-        // Send confirmation message in DM instead of response
-        await client.chat.postMessage({
-            channel: userId,
-            text: `Configuration saved! URL: ${url}`
-        });
     } catch (error) {
         logger.error('Error handling configure modal submission:', error);
         // Send error message to user
