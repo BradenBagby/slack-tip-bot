@@ -125,6 +125,44 @@ We may update this privacy policy from time to time. Any changes will be reflect
     res.type('text').send(privacyPolicy);
 });
 
+expressApp.get('/api/tos', async (req, res) => {
+    const termsOfService = `
+Terms of Service for Slack Tip Bot
+
+Last Updated: ${new Date().toISOString().split('T')[0]}
+
+1. Acceptance of Terms
+By using the Slack Tip Bot ("Service"), you agree to these Terms of Service.
+
+2. Description of Service
+Slack Tip Bot is a service that facilitates tipping between users within Slack workspaces.
+
+3. User Responsibilities
+- You agree to provide accurate information when using the Service
+- You are responsible for all activities that occur under your account
+- You agree not to use the Service for any illegal or unauthorized purpose
+
+4. Data Collection
+We collect and store only Slack usernames/display names as described in our Privacy Policy.
+
+5. Service Availability
+We strive to maintain Service availability but make no guarantees about continuous, uninterrupted access to the Service.
+
+6. Limitations of Liability
+The Service is provided "as is" without warranties of any kind. We are not liable for any damages arising from the use of the Service.
+
+7. Changes to Terms
+We reserve the right to modify these terms at any time. Continued use of the Service constitutes acceptance of modified terms.
+
+8. Contact
+For questions about these terms, please contact braden@bradenbagby.com
+
+9. Termination
+We reserve the right to terminate or suspend access to the Service at our discretion, without notice.`;
+
+    res.type('text').send(termsOfService);
+});
+
 // Start the Express server
 expressApp.listen(API_PORT, () => {
     logger.info(`Express app is running on port ${API_PORT}`);
