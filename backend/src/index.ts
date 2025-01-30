@@ -1,21 +1,71 @@
-import { API_PORT } from "./utils/env";
+import { App, LogLevel } from '@slack/bolt';
+import { fetchInstallation, storeInstallation } from './installation';
+import { API_PORT, IS_PRODUCTION, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET, SLACK_STATE_SECRET } from "./utils/env";
 import { uncaughtExceptionHandler } from "./utils/errors";
-import express from 'express';
 import logger from "./utils/logger";
 
-const app = express();
+console.log('IS_PRODUCTION', SLACK_SIGNING_SECRET);
 
-app.get('/configure', (req, res) => {
-    res.send('Configure route');
+const app = new App({
+    signingSecret: SLACK_SIGNING_SECRET,
+    clientId: SLACK_CLIENT_ID,
+    clientSecret: SLACK_CLIENT_SECRET,
+    stateSecret: SLACK_STATE_SECRET,
+    scopes: ['commands', 'chat:write', 'users:read'],
+    installationStore: {
+        storeInstallation,
+        fetchInstallation,
+    },
+    logLevel: IS_PRODUCTION ? LogLevel.WARN : LogLevel.DEBUG,
 });
 
-app.get('/tip', (req, res) => {
-    res.send('Tip route');
+// Configure command handler
+app.command('/configure', async ({ command, ack, say }) => {
+    await ack();
+    try {
+        await say({
+            text: "Configuration options:",
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: "Use this command to configure your workspace settings."
+                    }
+                }
+            ]
+        });
+    } catch (error) {
+        logger.error('Error handling /configure command:', error);
+    }
 });
 
-app.listen(API_PORT, () => {
-    logger.info(`Server is running on port ${API_PORT}`);
+// Tip command handler
+app.command('/tip', async ({ command, ack, say }) => {
+    await ack();
+    try {
+        await say({
+            text: "Tip functionality",
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: "Use this command to send tips to your colleagues!"
+                    }
+                }
+            ]
+        });
+    } catch (error) {
+        logger.error('Error handling /tip command:', error);
+    }
 });
+
+// Start the app
+(async () => {
+    await app.start(API_PORT);
+    logger.info(`⚡️ Slack Bolt app is running on port ${API_PORT}`);
+})();
 
 process.on('uncaughtException', uncaughtExceptionHandler);
 process.on('unhandledRejection', uncaughtExceptionHandler);

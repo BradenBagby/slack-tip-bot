@@ -1,0 +1,24 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model SlackInstallation {
+    id                  String   @id @default(cuid())
+    slackTeamId         String   @unique
+    botToken            String
+    botId               String
+    botUserId           String
+    enterpriseId        String?
+    enterpriseName      String?
+    teamName            String
+    tokenType           String
+    installedAt         DateTime @default(now())
+    isEnterpriseInstall Boolean  @default(false)
+
+    @@index([slackTeamId])
+}
