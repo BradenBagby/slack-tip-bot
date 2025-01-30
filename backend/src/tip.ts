@@ -31,7 +31,7 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: "Select an amount to generate a QR code:"
+                    text: "Select an amount to tip:"
                 }
             },
             {
