@@ -9,7 +9,7 @@ import path from 'path';
 import { HOST } from "./utils/env";
 
 
-export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewareArgs & AllMiddlewareArgs<StringIndexed>) => {
+export const tipCommand = async ({ client, body, command, respond }: SlackCommandMiddlewareArgs & AllMiddlewareArgs<StringIndexed>) => {
     const userId = command.user_id;
     if (!userId) throw new BaseError('User ID not found', command);
 
@@ -24,56 +24,68 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
     }
 
     try {
-        // Send message with amount buttons
-        await client.chat.postMessage({
-            channel: command.channel_id,
-            as_user: false,
-            blocks: [
-                {
-                    type: "section",
-                    text: {
-                        type: "mrkdwn",
-                        text: `Select an amount to tip ${user.userName || ''}:`
-                    }
-                },
-                {
-                    type: "actions",
-                    block_id: "qr_amount_selection",
-                    elements: [
-                        {
-                            type: "button",
-                            text: {
-                                type: "plain_text",
-                                text: "$1",
-                                emoji: true
-                            },
-                            value: `1:${userId}`,
-                            action_id: "qr_amount_1"
-                        },
-                        {
-                            type: "button",
-                            text: {
-                                type: "plain_text",
-                                text: "$5",
-                                emoji: true
-                            },
-                            value: `5:${userId}`,
-                            action_id: "qr_amount_5"
-                        },
-                        {
-                            type: "button",
-                            text: {
-                                type: "plain_text",
-                                text: "$10",
-                                emoji: true
-                            },
-                            value: `10:${userId}`,
-                            action_id: "qr_amount_10"
-                        }
-                    ]
+
+
+        const isDm = command.channel_name === 'directmessage';
+
+        const blocks = [
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: `Select an amount to tip ${user.userName || ''}:`
                 }
-            ]
-        });
+            },
+            {
+                type: "actions",
+                block_id: "qr_amount_selection",
+                elements: [
+                    {
+                        type: "button",
+                        text: {
+                            type: "plain_text",
+                            text: "$1",
+                            emoji: true
+                        },
+                        value: `1:${userId}`,
+                        action_id: "qr_amount_1"
+                    },
+                    {
+                        type: "button",
+                        text: {
+                            type: "plain_text",
+                            text: "$5",
+                            emoji: true
+                        },
+                        value: `5:${userId}`,
+                        action_id: "qr_amount_5"
+                    },
+                    {
+                        type: "button",
+                        text: {
+                            type: "plain_text",
+                            text: "$10",
+                            emoji: true
+                        },
+                        value: `10:${userId}`,
+                        action_id: "qr_amount_10"
+                    }
+                ]
+            }
+        ];
+
+        if (isDm) {
+            respond({
+                blocks,
+            })
+        } else {
+            // Send message with amount buttons
+            await client.chat.postMessage({
+                channel: command.channel_id,
+                as_user: false,
+                blocks,
+            });
+        }
     } catch (error: any) {
         if (error.data?.error === 'channel_not_found') {
             // Try to DM the user about the issue
