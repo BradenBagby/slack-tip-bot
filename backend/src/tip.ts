@@ -45,7 +45,7 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
                             text: "$1",
                             emoji: true
                         },
-                        value: "1",
+                        value: `1:${userId}`,
                         action_id: "qr_amount_1"
                     },
                     {
@@ -55,7 +55,7 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
                             text: "$5",
                             emoji: true
                         },
-                        value: "5",
+                        value: `5:${userId}`,
                         action_id: "qr_amount_5"
                     },
                     {
@@ -65,7 +65,7 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
                             text: "$10",
                             emoji: true
                         },
-                        value: "10",
+                        value: `10:${userId}`,
                         action_id: "qr_amount_10"
                     }
                 ]
@@ -105,9 +105,17 @@ export const tipAction = async ({ client, body, action, ack }: {
     const buttonAction = action as BlockElementAction;
     await ack();
     try {
-        const amount = buttonAction.action_id.split('_')[2];
-        const tippingUser = await getUserInfo(body.user.id);
-        const tipUrl = tippingUser?.url;
+        if (!('value' in buttonAction)) {
+            throw new BaseError('Invalid button action', buttonAction);
+        }
+        const [amount, recipientId] = buttonAction.value?.split(':') || [];
+        if (!amount || !recipientId) {
+            throw new BaseError('Invalid button action', buttonAction);
+        }
+
+        const recipient = await getUserInfo(recipientId);
+        const tipUrl = recipient?.url;
+
         if (!body.channel?.id) throw new BaseError('Channel ID not found', body);
 
         if (!tipUrl) {
@@ -129,7 +137,7 @@ export const tipAction = async ({ client, body, action, ack }: {
         // send message to channel saying 'this user tipped $amount'
         await client.chat.postMessage({
             channel: body.channel.id,
-            text: `${userName} tipped ${tippingUser?.userName || ''} $${amount}!`
+            text: `${userName} tipped ${recipient?.userName || ''} $${amount}!`
         });
 
         // Post ephemeral message with QR code as attachment
