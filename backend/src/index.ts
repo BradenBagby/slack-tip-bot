@@ -13,7 +13,7 @@ const app = new App({
     clientId: SLACK_CLIENT_ID,
     clientSecret: SLACK_CLIENT_SECRET,
     stateSecret: SLACK_STATE_SECRET,
-    scopes: ['commands', 'chat:write', 'users:read'],
+    scopes: ['commands', 'chat:write', 'users:read', 'im:write'],
     installationStore: {
         storeInstallation,
         fetchInstallation,
