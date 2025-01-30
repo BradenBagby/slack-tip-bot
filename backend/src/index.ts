@@ -83,6 +83,10 @@ expressApp.get('/api/tip/:userId', async (req, res) => {
     }
 });
 
+expressApp.get('/api/status', async (req, res) => {
+    res.send('ok');
+});
+
 // Start the Express server
 expressApp.listen(API_PORT, () => {
     logger.info(`Express app is running on port ${API_PORT}`);
