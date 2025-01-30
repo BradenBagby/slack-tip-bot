@@ -164,18 +164,31 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
         const userName = userInfo.user?.real_name || 'Someone';
 
         const isDm = body.channel.name === 'directmessage';
+        const attachments = [
+            {
+                text: tipUrl,
+            },
+            {
+                fallback: "QR Code for payment",
+                image_url: `${HOST}/api/tip/${body.user.id}`,
+                title: "Scan to pay",
+            },
+
+        ]
 
         // send message to channel saying 'this user tipped $amount'
         const text = `${userName} tipped ${recipient?.userName || ''} $${amount}!`;
         if (isDm) {
             respond({
                 text,
+                attachments,
             })
         }
         else {
             await client.chat.postMessage({
                 channel: body.channel.id,
                 text,
+                attachments,
             });
         }
 
@@ -184,17 +197,7 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
             channel: body.channel.id,
             user: body.user.id,
             text: `Thanks for the tip!`,
-            attachments: [
-                {
-                    text: tipUrl,
-                },
-                {
-                    fallback: "QR Code for payment",
-                    image_url: `${HOST}/api/tip/${body.user.id}`,
-                    title: "Scan to pay",
-                },
 
-            ]
         });
 
 
