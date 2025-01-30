@@ -13,7 +13,7 @@ const app = new App({
     clientId: SLACK_CLIENT_ID,
     clientSecret: SLACK_CLIENT_SECRET,
     stateSecret: SLACK_STATE_SECRET,
-    scopes: ['commands', 'chat:write', 'users:read', 'im:write'],
+    scopes: ['commands', 'chat:write', 'users:read', 'im:write', 'mpim:write', 'chat:write.public'],
     installationStore: {
         storeInstallation,
         fetchInstallation,
@@ -49,7 +49,10 @@ app.command('/tip', async (allArgs) => {
     try {
         const [subcommand, ...args] = command.text.split(' ');
 
-        if (subcommand === 'configure') {
+        const user = await getUserInfo(body.user.id);
+        if (!user?.url) {
+            await configureCommand(allArgs);
+        } else if (subcommand === 'configure') {
             await configureCommand(allArgs);
         } else {
             await tipCommand(allArgs);

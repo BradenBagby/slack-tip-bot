@@ -27,7 +27,7 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
         // Send message with amount buttons
         await client.chat.postMessage({
             channel: command.channel_id,
-            
+            as_user: false,
             blocks: [
                 {
                     type: "section",
