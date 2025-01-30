@@ -121,8 +121,11 @@ export const tipAction = async ({ client, body, action, ack }: {
     await ack();
     try {
         const amount = buttonAction.action_id.split('_')[2];
-        const tippingUser = await getUserInfo(body.user.id);
-        const tipUrl = tippingUser?.url;
+        
+        // Get the recipient's info (person who posted the original message)
+        const recipientUserId = (body as any).message?.user;
+        const recipientUser = await getUserInfo(recipientUserId);
+        const tipUrl = recipientUser?.url;  // Use recipient's payment URL
         
         // Handle DM channels
         let channelId = body.channel?.id;
@@ -153,7 +156,7 @@ export const tipAction = async ({ client, body, action, ack }: {
         // send message to channel saying 'this user tipped $amount'
         await client.chat.postMessage({
             channel: channelId,
-            text: `${userName} tipped ${tippingUser?.userName || ''} $${amount}!`
+            text: `${userName} tipped ${recipientUser?.userName || ''} $${amount}!`
         });
 
         // Post ephemeral message with QR code as attachment
