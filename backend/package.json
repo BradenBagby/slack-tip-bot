@@ -1,0 +1,15 @@
+{
+  "name": "slack-tip-bot",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "prod": "pm2-runtime start ecosystem.config.js --env production",
+    "dev": "pm2-runtime start ecosystem.config.js --env development && npm run logs",
+    "logs": "pm2 logs all"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
