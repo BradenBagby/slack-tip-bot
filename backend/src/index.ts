@@ -73,6 +73,7 @@ expressApp.get('/api/tip/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const user = await getUserInfo(userId);
+        console.log('userid', userId, user)
         const tipUrl = user?.url;
         if (!tipUrl) throw new BaseError('Payment URL not configured', userId);
         const qrFilename = await buildTipQr(tipUrl, userId);
