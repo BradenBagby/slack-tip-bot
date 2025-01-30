@@ -207,7 +207,7 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
             channel: body.channel.id,
             user: body.user.id,
             text: `Thanks for the tip!`,
-
+            attachments,
         });
 
 
