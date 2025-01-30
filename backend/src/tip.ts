@@ -4,6 +4,8 @@ import { BaseError } from "./utils/errors";
 import { FunctionCompleteFn, FunctionFailFn } from "@slack/bolt/dist/CustomFunction";
 import logger from "./utils/logger";
 import QRCode from 'qrcode';
+import { tmpdir } from 'os';
+import path from 'path';
 
 
 export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewareArgs & AllMiddlewareArgs<StringIndexed>) => {
@@ -70,11 +72,22 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
     });
 }
 
-const getTipUrl = async (userId: string) => {
+export const getTipUrl = async (userId: string) => {
     const userConfig = await prisma.userConfiguration.findFirst({
         where: { userId: userId }
     });
     return userConfig?.url;
+}
+
+export const buildTipQr = async (url: string, userId: string): Promise<string> => {
+    const filename = `qr_${userId}.png`;
+    const filePath = path.join(tmpdir(), filename);
+    await QRCode.toFile(filePath, url, {
+        type: 'png',
+        width: 300,
+        margin: 2,
+    });
+    return filePath;
 }
 
 export const tipAction = async ({ client, body, action, ack }: {
@@ -87,7 +100,7 @@ export const tipAction = async ({ client, body, action, ack }: {
     fail?: FunctionFailFn;
     inputs?: FunctionInputs;
 } & AllMiddlewareArgs<StringIndexed>) => {
-    const buttonAction = action as BlockElementAction;  // Type assertion
+    const buttonAction = action as BlockElementAction;
     await ack();
     try {
         const amount = buttonAction.action_id.split('_')[2];
@@ -104,20 +117,21 @@ export const tipAction = async ({ client, body, action, ack }: {
         }
 
         // Generate payment URL with amount
-        const paymentUrl = tipUrl; // TODO: 
+        const paymentUrl = tipUrl;
 
-        // Generate QR code
-        const qrBuffer = await QRCode.toBuffer(paymentUrl);
+        // Generate QR code as base64
+        const qrBase64 = await QRCode.toDataURL(paymentUrl);
 
-        // Upload QR code to Slack
-        const result = await client.files.uploadV2({
-            channels: body.channel.id,
-            file: qrBuffer,
-            filename: `payment-qr-${amount}.png`,
-            initial_comment: `QR Code for $${amount} payment`
+        // Post ephemeral message with QR code as attachment
+        await client.chat.postEphemeral({
+            channel: body.channel.id,
+            user: body.user.id,
+            text: `QR Code for $${amount} payment`,
+            attachments: [{
+                image_url: 'https://picsum.photos/200/300',
+                fallback: `QR Code for $${amount} payment`
+            }]
         });
-
-        if (!result.ok) throw new BaseError('Failed to upload QR code', result);
 
     } catch (error) {
         logger.error('Error handling QR code generation:', error);

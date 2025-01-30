@@ -1,10 +1,12 @@
 import { App, LogLevel } from '@slack/bolt';
 import { configureCommand, configureModal } from './configure';
 import { fetchInstallation, storeInstallation } from './installation';
-import { tipAction, tipCommand } from './tip';
-import { API_PORT, IS_PRODUCTION, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET, SLACK_STATE_SECRET } from "./utils/env";
-import { uncaughtExceptionHandler } from "./utils/errors";
+import { buildTipQr, getTipUrl, tipAction, tipCommand } from './tip';
+import { SLACK_PORT, IS_PRODUCTION, SLACK_CLIENT_ID, SLACK_CLIENT_SECRET, SLACK_SIGNING_SECRET, SLACK_STATE_SECRET } from "./utils/env";
+import { BaseError, uncaughtExceptionHandler } from "./utils/errors";
 import logger from "./utils/logger";
+import express from 'express';
+import { API_PORT } from './utils/env';
 
 const app = new App({
     signingSecret: SLACK_SIGNING_SECRET,
@@ -60,16 +62,35 @@ app.command('/tip', async (allArgs) => {
 // Add button click handler with proper typing
 app.action(/qr_amount_\d+/, tipAction);
 
-
-
-
 // Keep the view submission handler
 app.view('configure_modal', configureModal);
 
+// Initialize Express app
+const expressApp = express();
+
+// Define the /tip/:userId route
+expressApp.get('/api/tip/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const tipUrl = await getTipUrl(userId);
+        if (!tipUrl) throw new BaseError('Payment URL not configured', userId);
+        const qrFilename = await buildTipQr(tipUrl, userId);
+        res.sendFile(qrFilename);
+    } catch (error) {
+        logger.error('Error handling /tip/:userId route:', error);
+        res.status(500).send('Internal server error');
+    }
+});
+
+// Start the Express server
+expressApp.listen(API_PORT, () => {
+    logger.info(`Express app is running on port ${API_PORT}`);
+});
+
 // Start the app
 (async () => {
-    await app.start(API_PORT);
-    logger.info(`⚡️ Slack Bolt app is running on port ${API_PORT}`);
+    await app.start(SLACK_PORT);
+    logger.info(`⚡️ Slack Bolt app is running on port ${SLACK_PORT}`);
 })();
 
 process.on('uncaughtException', uncaughtExceptionHandler);

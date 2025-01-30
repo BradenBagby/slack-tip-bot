@@ -5,6 +5,7 @@ services:
       context: ./backend
     ports:
       - "4005:4005"
+      - "4006:4006"
     env_file:
       - .env
   postgres:

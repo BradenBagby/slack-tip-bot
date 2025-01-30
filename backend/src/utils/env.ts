@@ -1,7 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: process.env.NODE_ENV=== 'production' ? undefined : '../.env' });
 
-export const API_PORT = process.env.API_PORT || 4005;
+export const SLACK_PORT = process.env.SLACK_PORT || 4005;
+export const API_PORT = process.env.API_PORT || 4006;
 export const ENV = process.env.NODE_ENV || 'development';
 export const IS_PRODUCTION = ENV === 'production';
 
