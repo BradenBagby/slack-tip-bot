@@ -29,6 +29,7 @@ RUN npm run build
 
 # Expose port
 EXPOSE 4005
+EXPOSE 4006
 
 # Start the application using PM2
 CMD ["npm", "run", "prod"]
