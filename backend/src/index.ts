@@ -55,7 +55,7 @@ app.command('/tip', async (allArgs) => {
             await tipCommand(allArgs);
         }
     } catch (error) {
-        logger.error('Error handling /tip command:', error);
+        logger.error('Error handling command:', error);
     }
 });
 

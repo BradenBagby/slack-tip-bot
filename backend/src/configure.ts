@@ -79,6 +79,11 @@ export const configureModal = async ({ ack, view, body, client }: SlackViewMiddl
             },
         });
 
+        await client.chat.postMessage({
+            channel: body.user.id,
+            text: "Tip URL set to " + url
+        });
+
     } catch (error) {
         logger.error('Error handling configure modal submission:', error);
         // Send error message to user

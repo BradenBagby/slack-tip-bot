@@ -23,55 +23,74 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
         return;
     }
 
-    // Send message with amount buttons
-    await client.chat.postMessage({
-        channel: command.channel_id,
-        blocks: [
-            {
-                type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: `Select an amount to tip ${user.userName || ''}:`
-                }
-            },
-            {
-                type: "actions",
-                block_id: "qr_amount_selection",
-                elements: [
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$1",
-                            emoji: true
-                        },
-                        value: `1:${userId}`,
-                        action_id: "qr_amount_1"
-                    },
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$5",
-                            emoji: true
-                        },
-                        value: `5:${userId}`,
-                        action_id: "qr_amount_5"
-                    },
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$10",
-                            emoji: true
-                        },
-                        value: `10:${userId}`,
-                        action_id: "qr_amount_10"
+    try {
+        // Send message with amount buttons
+        await client.chat.postMessage({
+            channel: command.channel_id,
+            
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `Select an amount to tip ${user.userName || ''}:`
                     }
-                ]
+                },
+                {
+                    type: "actions",
+                    block_id: "qr_amount_selection",
+                    elements: [
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$1",
+                                emoji: true
+                            },
+                            value: `1:${userId}`,
+                            action_id: "qr_amount_1"
+                        },
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$5",
+                                emoji: true
+                            },
+                            value: `5:${userId}`,
+                            action_id: "qr_amount_5"
+                        },
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$10",
+                                emoji: true
+                            },
+                            value: `10:${userId}`,
+                            action_id: "qr_amount_10"
+                        }
+                    ]
+                }
+            ]
+        });
+    } catch (error: any) {
+        if (error.data?.error === 'channel_not_found') {
+            // Try to DM the user about the issue
+            try {
+                await client.chat.postMessage({
+                    channel: userId,  // This sends a DM to the user
+                    text: "I need to be invited to the channel before I can post messages there. Please invite me to the channel by mentioning me or using `/invite @TipBot`"
+                });
+            } catch (dmError) {
+                // If we can't DM them either, we'll have to silently fail
+                logger.error('Failed to notify user about channel access:', dmError);
             }
-        ]
-    });
+        } else {
+            // Re-throw other errors
+            throw error;
+        }
+    }
 }
 
 export const getUserInfo = async (userId: string) => {
