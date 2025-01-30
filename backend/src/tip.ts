@@ -145,8 +145,10 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
 
         const recipient = await getUserInfo(recipientId);
         const tipUrl = recipient?.url;
+        const isSelf = recipientId === body.user.id;
 
         if (!body.channel?.id) throw new BaseError('Channel ID not found', body);
+        const isDm = body.channel.name === 'directmessage';
 
         if (!tipUrl) {
             await client.chat.postEphemeral({
@@ -157,13 +159,22 @@ export const tipAction = async ({ client, body, action, ack, respond }: {
             return;
         }
 
+        if (isSelf) {
+            if (isDm) return;
+            await client.chat.postEphemeral({
+                channel: body.channel.id,
+                user: body.user.id,
+                text: "Nice try! You can't tip yourself"
+            });
+            return;
+        }
+
         // Get user info from Slack API for full name
         const userInfo = await client.users.info({
             user: body.user.id
         });
         const userName = userInfo.user?.real_name || 'Someone';
 
-        const isDm = body.channel.name === 'directmessage';
         const attachments = [
             {
                 text: tipUrl,
