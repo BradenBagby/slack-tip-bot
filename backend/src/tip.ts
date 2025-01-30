@@ -23,55 +23,70 @@ export const tipCommand = async ({ client, body, command }: SlackCommandMiddlewa
         return;
     }
 
-    // Send message with amount buttons
-    await client.chat.postMessage({
-        channel: command.channel_id,
-        blocks: [
-            {
-                type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: `Select an amount to tip ${user.userName || ''}:`
-                }
-            },
-            {
-                type: "actions",
-                block_id: "qr_amount_selection",
-                elements: [
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$1",
-                            emoji: true
-                        },
-                        value: "1",
-                        action_id: "qr_amount_1"
-                    },
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$5",
-                            emoji: true
-                        },
-                        value: "5",
-                        action_id: "qr_amount_5"
-                    },
-                    {
-                        type: "button",
-                        text: {
-                            type: "plain_text",
-                            text: "$10",
-                            emoji: true
-                        },
-                        value: "10",
-                        action_id: "qr_amount_10"
+    try {
+        // For DMs, we need to open a direct message channel first
+        let channelId = command.channel_id;
+        if (command.channel_name === 'directmessage') {
+            const conversation = await client.conversations.open({
+                users: userId
+            });
+            channelId = conversation.channel?.id as string;
+        }
+
+        // Send message with amount buttons
+        await client.chat.postMessage({
+            channel: channelId,
+            text: `Select an amount to tip ${user.userName || ''}:`, // Added text for accessibility
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `Select an amount to tip ${user.userName || ''}:`
                     }
-                ]
-            }
-        ]
-    });
+                },
+                {
+                    type: "actions",
+                    block_id: "qr_amount_selection",
+                    elements: [
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$1",
+                                emoji: true
+                            },
+                            value: "1",
+                            action_id: "qr_amount_1"
+                        },
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$5",
+                                emoji: true
+                            },
+                            value: "5",
+                            action_id: "qr_amount_5"
+                        },
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "$10",
+                                emoji: true
+                            },
+                            value: "10",
+                            action_id: "qr_amount_10"
+                        }
+                    ]
+                }
+            ]
+        });
+    } catch (error) {
+        logger.error('Error handling /tip command:', error);
+        throw new BaseError('Failed to send tip message', error);
+    }
 }
 
 export const getUserInfo = async (userId: string) => {
@@ -108,11 +123,20 @@ export const tipAction = async ({ client, body, action, ack }: {
         const amount = buttonAction.action_id.split('_')[2];
         const tippingUser = await getUserInfo(body.user.id);
         const tipUrl = tippingUser?.url;
-        if (!body.channel?.id) throw new BaseError('Channel ID not found', body);
+        
+        // Handle DM channels
+        let channelId = body.channel?.id;
+        if (!channelId) {
+            const conversation = await client.conversations.open({
+                users: body.user.id
+            });
+            channelId = conversation.channel?.id;
+        }
+        if (!channelId) throw new BaseError('Could not determine channel ID', body);
 
         if (!tipUrl) {
             await client.chat.postEphemeral({
-                channel: body.channel.id,
+                channel: channelId,
                 user: body.user.id,
                 text: "Error: Payment URL not configured"
             });
@@ -128,13 +152,13 @@ export const tipAction = async ({ client, body, action, ack }: {
 
         // send message to channel saying 'this user tipped $amount'
         await client.chat.postMessage({
-            channel: body.channel.id,
+            channel: channelId,
             text: `${userName} tipped ${tippingUser?.userName || ''} $${amount}!`
         });
 
         // Post ephemeral message with QR code as attachment
         await client.chat.postEphemeral({
-            channel: body.channel.id,
+            channel: channelId,
             user: body.user.id,
             text: `Thanks for the tip!`,
             attachments: [
@@ -153,11 +177,18 @@ export const tipAction = async ({ client, body, action, ack }: {
 
     } catch (error) {
         logger.error('Error handling QR code generation:', error);
-        if (body.channel?.id)
+        // Try to send error message even if channel ID wasn't found initially
+        try {
+            const conversation = await client.conversations.open({
+                users: body.user.id
+            });
             await client.chat.postEphemeral({
-                channel: body.channel.id,
+                channel: conversation.channel?.id as string,
                 user: body.user.id,
                 text: "Error generating QR code"
             });
+        } catch (secondaryError) {
+            logger.error('Failed to send error message:', secondaryError);
+        }
     }
 }
