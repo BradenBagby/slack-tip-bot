@@ -76,7 +76,7 @@ export const tipCommand = async ({ client, body, command, respond }: SlackComman
 
         if (isDm) {
             respond({
-                blocks,
+                text: 'Tipping in dms is currently not supported'
             })
         } else {
             // Send message with amount buttons
